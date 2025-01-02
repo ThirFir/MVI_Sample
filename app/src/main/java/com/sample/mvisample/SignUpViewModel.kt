@@ -9,37 +9,11 @@ import kotlinx.coroutines.flow.collect
 import org.orbitmvi.orbit.viewmodel.container
 import kotlin.reflect.KClass
 
-data class SignUpState(
-    val account: String = "",
-    val password: String = "",
-    val nickname: String = "",
-    val accountUiState: AccountUiState = AccountUiState.Idle,
-    val isLoading: Boolean = true
-)
-
-sealed interface AccountUiState {
-    data object Idle: AccountUiState
-    data object InvalidFormat: AccountUiState
-    data object Empty: AccountUiState
-    data object AlreadyExist: AccountUiState
-    data object Available: AccountUiState
-}
-
-sealed interface SignUpSideEffect {
-    data object NavigateToMain: SignUpSideEffect
-    data object ShowSnackbar: SignUpSideEffect
-}
-
-sealed interface SignUpResult {
-    data object Success: SignUpResult
-}
-
 class SignUpViewModel(
     private val userRepository: UserRepository
 ) : BaseContainerHost<SignUpState, SignUpSideEffect>() {
 
     override val container = container<SignUpState, SignUpSideEffect>(SignUpState()) {
-        delay(1000)
         reduce {
             state.copy(isLoading = false)
         }
@@ -75,17 +49,39 @@ class SignUpViewModel(
     }
 
     fun trySignUp() = intent {
-        val account = state.account
-        val password = state.password
-        val nickname = state.nickname
-
-        userRepository.trySignUp(account, password, nickname).onSuccess {
+        userRepository.trySignUp(state.account, state.password, state.nickname).onSuccess {
             postSideEffect(SignUpSideEffect.NavigateToMain)
         }.onFailure {
             // 에러 처리
             postSideEffect(SignUpSideEffect.ShowSnackbar)
         }
     }
+}
+
+data class SignUpState(
+    val account: String = "",
+    val password: String = "",
+    val nickname: String = "",
+    val accountUiState: AccountUiState = AccountUiState.Idle,
+    val isLoading: Boolean = true,
+    val isError: Boolean = true
+)
+
+sealed interface AccountUiState {
+    data object Idle: AccountUiState
+    data object InvalidFormat: AccountUiState
+    data object Empty: AccountUiState
+    data object AlreadyExist: AccountUiState
+    data object Available: AccountUiState
+}
+
+sealed interface SignUpSideEffect {
+    data object NavigateToMain: SignUpSideEffect
+    data object ShowSnackbar: SignUpSideEffect
+}
+
+sealed interface SignUpResult {
+    data object Success: SignUpResult
 }
 
 class SignUpViewModelFactory(
