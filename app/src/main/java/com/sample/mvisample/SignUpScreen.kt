@@ -1,9 +1,12 @@
 package com.sample.mvisample
 
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,8 +22,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -33,7 +38,8 @@ fun SignUpScreen(
         factory = SignUpViewModelFactory(
             userRepository = UserRepository()
         )
-    )
+    ),
+    onNavigateToMain: () -> Unit = {}
 ){
 
     val state = viewModel.collectAsState().value
@@ -57,7 +63,7 @@ fun SignUpScreen(
     viewModel.collectSideEffect {
         when(it) {
             SignUpSideEffect.NavigateToMain -> {
-                Toast.makeText(context, "회원가입 성공(네비게이팅)", Toast.LENGTH_SHORT).show()
+                onNavigateToMain()
             }
 
             SignUpSideEffect.ShowSnackbar -> {
@@ -87,57 +93,69 @@ fun SignUpScreenContent(
     Column(
         modifier = modifier,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = signUpState.account,
-                onValueChange = onAccountChanged,
-                label = { Text("Account") },
-            )
-            Button(
-                onClick = onCheckDuplicateClicked,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.padding(start = 8.dp),
+        if (signUpState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Text("중복확인")
+                Text("로딩 중", fontSize = 30.sp, modifier = Modifier.background(Color.Cyan))
             }
-        }
-        when(signUpState.accountUiState) {
-            AccountUiState.Empty -> {
-                Text(text = "아이디를 입력해주세요",)
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = signUpState.account,
+                    onValueChange = onAccountChanged,
+                    label = { Text("Account") },
+                )
+                Button(
+                    onClick = onCheckDuplicateClicked,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.padding(start = 8.dp),
+                ) {
+                    Text("중복확인")
+                }
             }
-            AccountUiState.InvalidFormat -> {
-                Text(text = "아이디 형식을 확인해주세요",)
-            }
-            AccountUiState.AlreadyExist -> {
-                Text(text = "이미 존재하는 아이디입니다",)
-            }
-            AccountUiState.Available -> {
-                Text(text = "사용 가능한 아이디입니다",)
-            }
+            when (signUpState.accountUiState) {
+                AccountUiState.Empty -> {
+                    Text(text = "아이디를 입력해주세요",)
+                }
 
-            AccountUiState.Idle -> Unit
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = signUpState.password,
-            onValueChange = onPasswordChanged,
-            label = { Text("Password") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = signUpState.nickname,
-            onValueChange = onNicknameChanged,
-            label = { Text("Nickname") }
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Button(
-            enabled = isSignUpButtonEnabled,
-            onClick = onSignUpClicked,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("회원가입")
+                AccountUiState.InvalidFormat -> {
+                    Text(text = "아이디 형식을 확인해주세요",)
+                }
+
+                AccountUiState.AlreadyExist -> {
+                    Text(text = "이미 존재하는 아이디입니다",)
+                }
+
+                AccountUiState.Available -> {
+                    Text(text = "사용 가능한 아이디입니다",)
+                }
+
+                AccountUiState.Idle -> Unit
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = signUpState.password,
+                onValueChange = onPasswordChanged,
+                label = { Text("Password") }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = signUpState.nickname,
+                onValueChange = onNicknameChanged,
+                label = { Text("Nickname") }
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                enabled = isSignUpButtonEnabled,
+                onClick = onSignUpClicked,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("회원가입")
+            }
         }
     }
 }

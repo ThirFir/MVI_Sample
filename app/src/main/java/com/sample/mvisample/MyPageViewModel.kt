@@ -1,42 +1,39 @@
 package com.sample.mvisample
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.CreationExtras
+import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.annotation.OrbitExperimental
 import org.orbitmvi.orbit.viewmodel.container
+import kotlin.reflect.KClass
 
 class MyPageViewModel(
-    private val myPageRepository: MyPageRepository
+    private val userRepository: UserRepository
 ): BaseContainerHost<MyPageUiState, Nothing>() {
 
     override val container: Container<MyPageUiState, Nothing> = container(MyPageUiState.Loading) {
-        myPageRepository.fetchUserInfo().onSuccess {
-            reduce {
-                MyPageUiState.Success(it)
-            }
-        }.onFailure {
-            reduce {
-                MyPageUiState.LoadFailed
-            }
-        }
+        delay(1000)
+        userRepository.fetchUserInfo().reduceResult(
+            syntax = this,
+            onSuccess = { MyPageUiState.Success(it) },
+            onFailure = { MyPageUiState.LoadFailed }
+        )
     }
 
     @OptIn(OrbitExperimental::class)
     fun getRandomNickname() = intent {
         runOn<MyPageUiState.Success> {
-            myPageRepository.getRandomNickname()
-                .onSuccess { reduce { MyPageUiState.Success(state.userInfo.copy(nickname = it)) }
-            }.onFailure { reduce { MyPageUiState.LoadFailed } }
+//            userRepository.getRandomNickname()
+//                .onSuccess { reduce { MyPageUiState.Success(state.userInfo.copy(nickname = it)) }
+//            }.onFailure { reduce { MyPageUiState.LoadFailed } }
             // OR
-            myPageRepository.getRandomNickname().reduceResult(
+            userRepository.getRandomNickname().reduceResult(
                 syntax = this@intent,
                 onSuccess = { MyPageUiState.Success(state.userInfo.copy(nickname = it)) },
                 onFailure = { MyPageUiState.LoadFailed }
             )
-            myPageRepository.getRandomNickname().reduceOnSuccess(
-                syntax = this@intent
-            ) {
-                MyPageUiState.Success(state.userInfo.copy(nickname = it))
-            }
         }
     }
 }
@@ -53,19 +50,12 @@ data class UserInfoState(
     val nickname: String
 )
 
-class MyPageRepository() {
-    fun fetchUserInfo(): Result<UserInfoState> {
-        return runCatching {
-            UserInfoState("account1", "nickname1")
-        }
-    }
 
-    fun getRandomNickname(): Result<String> {
-        val allowedChars = ('A'..'Z') + ('a'..'z') + ('0'..'9')
-        return runCatching {
-            (1..8)
-                .map { allowedChars.random() }
-                .joinToString("")
-        }
+class MyPageViewModelFactory(
+    private val userRepository: UserRepository
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T {
+        return MyPageViewModel(userRepository) as T
     }
 }

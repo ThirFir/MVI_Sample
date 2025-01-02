@@ -20,4 +20,19 @@ class UserRepository {
             }
         }
     }
+
+    fun fetchUserInfo(): Result<UserInfoState> {
+        return runCatching {
+            UserInfoState("account1", "nickname1")
+        }
+    }
+
+    fun getRandomNickname(): Result<String> {
+        val allowedChars = ('A'..'Z') + ('a'..'z') + ('0'..'9')
+        return runCatching {
+            (1..8)
+                .map { allowedChars.random() }
+                .joinToString("")
+        }
+    }
 }

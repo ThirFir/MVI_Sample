@@ -3,6 +3,7 @@ package com.sample.mvisample
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import org.orbitmvi.orbit.viewmodel.container
@@ -13,6 +14,7 @@ data class SignUpState(
     val password: String = "",
     val nickname: String = "",
     val accountUiState: AccountUiState = AccountUiState.Idle,
+    val isLoading: Boolean = true
 )
 
 sealed interface AccountUiState {
@@ -36,8 +38,11 @@ class SignUpViewModel(
     private val userRepository: UserRepository
 ) : BaseContainerHost<SignUpState, SignUpSideEffect>() {
 
-
     override val container = container<SignUpState, SignUpSideEffect>(SignUpState()) {
+        delay(1000)
+        reduce {
+            state.copy(isLoading = false)
+        }
     }
 
     fun checkAccountAlreadyExist() = intent {
@@ -91,40 +96,3 @@ class SignUpViewModelFactory(
         return SignUpViewModel(userRepository) as T
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
